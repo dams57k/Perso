@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAL & SAL Lenslets — Myopia Control</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,900;1,300&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f5f2ec;--surface:#fff;--surface2:#f0ece3;--border:#e2ddd4;
+  --accent:#c8621a;--accent2:#2563b0;--accent3:#0f7e5a;
+  --ink:#1a1612;--muted:#7a7167;--danger:#c0392b;--warn:#d97706;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden}
+body::after{content:'';position:fixed;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent3));z-index:100}
+.container{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:0 24px 80px}
+header{padding:56px 0 44px;border-bottom:1px solid var(--border);margin-bottom:40px;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:end}
+.jtag{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:16px}
+.jtag::before{content:'';display:block;width:20px;height:2px;background:var(--accent)}
+h1{font-family:'Fraunces',serif;font-size:clamp(1.9rem,4.5vw,3rem);font-weight:900;line-height:1.1;color:var(--ink);margin-bottom:14px}
+h1 em{font-style:italic;color:var(--accent)}
+.auth{font-size:13px;color:var(--muted);font-weight:300}
+.nav-bar{display:flex;gap:4px;margin-bottom:36px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
+.nav-bar::-webkit-scrollbar{display:none}
+.nav-btn{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;padding:8px 16px;border-radius:6px;cursor:pointer;transition:all .18s;white-space:nowrap;flex-shrink:0}
+.nav-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(200,98,26,.04)}
+.nav-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.section{display:none;animation:fu .35s ease}.section.active{display:block}
+@keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.st{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:900;color:var(--ink);margin-bottom:6px}
+.ss{color:var(--muted);font-size:13px;margin-bottom:28px;font-weight:300}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:26px;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.clabel{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.card h2{font-family:'Fraunces',serif;font-size:1.25rem;font-weight:600;color:var(--ink);margin-bottom:10px}
+.card p{color:var(--muted);line-height:1.75;font-size:14.5px;font-weight:300}
+.card strong{color:var(--ink);font-weight:600}
+.pq{border-left:3px solid var(--accent);padding:14px 18px;margin:16px 0;background:rgba(200,98,26,.04);border-radius:0 8px 8px 0;font-size:14px;color:var(--ink);line-height:1.65;font-weight:300}
+.srow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0}
+.sbox{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:18px 14px;text-align:center}
+.snum{font-family:'Fraunces',serif;font-size:2rem;font-weight:900;color:var(--accent);line-height:1;margin-bottom:5px}
+.sdesc{font-size:11px;color:var(--muted);font-weight:500;line-height:1.3}
+.tcol{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:20px 0}
+.lcol{border:2px solid var(--border);border-radius:10px;padding:18px 14px;text-align:center;transition:border-color .2s,transform .2s}
+.lcol:hover{transform:translateY(-2px)}
+.lcol.hal{border-color:var(--accent);background:rgba(200,98,26,.04)}
+.lcol.sal{border-color:var(--accent2);background:rgba(37,99,176,.04)}
+.lbadge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:1px;padding:3px 10px;border-radius:20px;margin-bottom:10px}
+.hal .lbadge{background:rgba(200,98,26,.12);color:var(--accent)}
+.sal .lbadge{background:rgba(37,99,176,.12);color:var(--accent2)}
+.svl .lbadge{background:var(--surface2);color:var(--muted)}
+.lcol .val{font-family:'Fraunces',serif;font-size:1.7rem;font-weight:900;line-height:1;margin-bottom:4px}
+.hal .val{color:var(--accent)}.sal .val{color:var(--accent2)}.svl .val{color:var(--muted)}
+.lcol .sub{font-size:11px;color:var(--muted);font-weight:400}
+.bg{margin-bottom:22px}
+.bgl{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:10px;letter-spacing:.3px}
+.br{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.bn{font-size:12px;color:var(--muted);width:36px;font-weight:600}
+.bt{flex:1;background:var(--surface2);border-radius:6px;height:22px;overflow:hidden}
+.bf{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:10px;font-size:11px;font-weight:600;color:#fff;transition:width 1s cubic-bezier(.4,0,.2,1);white-space:nowrap}
+.bhal{background:var(--accent)}.bsal{background:var(--accent2)}.bsvl{background:#b0a89a}
+.steps{}
+.step{display:flex;gap:14px;margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--border)}
+.step:last-child{border-bottom:none;padding-bottom:0}
+.sn{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb h4{font-weight:600;font-size:14px;color:var(--ink);margin-bottom:3px}
+.sb p{font-size:13px;color:var(--muted);line-height:1.6;font-weight:300}
+.dtable{width:100%;border-collapse:collapse;font-size:13px;margin:16px 0}
+.dtable th{background:var(--surface2);border:1px solid var(--border);padding:10px 12px;text-align:left;font-weight:600;font-size:11px;letter-spacing:.5px;color:var(--ink);text-transform:uppercase}
+.dtable td{border:1px solid var(--border);padding:10px 12px;color:var(--muted);font-weight:300}
+.dtable tr:hover td{background:rgba(200,98,26,.03)}
+.hc{color:var(--accent);font-weight:600}.sc{color:var(--accent2);font-weight:600}.vc{color:var(--muted)}
+.hr td{background:rgba(200,98,26,.05)}
+.chip{display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;margin:3px}
+.cg{background:rgba(15,126,90,.1);color:var(--accent3)}.co{background:rgba(200,98,26,.1);color:var(--accent)}.cb{background:rgba(37,99,176,.1);color:var(--accent2)}.cw{background:var(--surface2);color:var(--muted)}.cr{background:rgba(192,57,43,.1);color:var(--danger)}
+.qt{font-family:'Fraunces',serif;font-size:1.15rem;color:var(--ink);margin-bottom:20px;line-height:1.4;font-weight:600}
+.qopts{display:flex;flex-direction:column;gap:10px}
+.qo{background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:13px 18px;font-family:'Outfit',sans-serif;font-size:14px;color:var(--ink);text-align:left;cursor:pointer;transition:all .18s;width:100%;font-weight:400}
+.qo:hover:not(:disabled){border-color:var(--accent);background:rgba(200,98,26,.03)}
+.qo.correct{border-color:var(--accent3);background:rgba(15,126,90,.07);color:var(--accent3);font-weight:600}
+.qo.wrong{border-color:var(--danger);background:rgba(192,57,43,.06);color:var(--danger)}
+.qo:disabled{cursor:not-allowed}
+.qfb{display:none;margin-top:14px;padding:14px 16px;border-radius:10px;font-size:13.5px;line-height:1.65;font-weight:300}
+.qfb.show{display:block}.qfb.ok{background:rgba(15,126,90,.07);border:1px solid var(--accent3);color:var(--accent3)}.qfb.bad{background:rgba(192,57,43,.06);border:1px solid var(--danger);color:var(--danger)}
+.qnav{display:flex;justify-content:space-between;align-items:center;margin-top:20px}
+.qp{font-size:12px;color:var(--muted)}
+.bp{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 22px;font-family:'Outfit',sans-serif;font-weight:600;font-size:13px;cursor:pointer;transition:opacity .2s,transform .15s}
+.bp:hover{opacity:.88;transform:translateY(-1px)}.bp:disabled{opacity:.3;cursor:not-allowed;transform:none}
+.bg2{background:transparent;border:1.5px solid var(--border);color:var(--muted);border-radius:8px;padding:10px 18px;font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;transition:all .18s}
+.bg2:hover{border-color:var(--accent);color:var(--accent)}
+.stag{background:var(--surface2);border:1px solid var(--border);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;color:var(--accent)}
+.rring{width:130px;height:130px;margin:0 auto 20px;position:relative}
+.rring svg{transform:rotate(-90deg)}
+.rb{fill:none;stroke:var(--surface2);stroke-width:10}.rf{fill:none;stroke:var(--accent);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset 1s ease}
+.ri{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.rn{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:900;color:var(--accent)}.rl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.sch{background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-family:'Outfit',sans-serif;font-size:12px;padding:5px 12px;border-radius:20px;cursor:pointer;transition:all .18s}
+.sch:hover{border-color:var(--accent);color:var(--accent);background:rgba(200,98,26,.05)}
+.bu{align-self:flex-end;background:var(--accent);color:#fff;border-radius:16px 16px 4px 16px;padding:12px 16px;font-size:14px;line-height:1.6;max-width:85%;font-weight:400}
+.bai{align-self:flex-start;background:var(--surface);border:1px solid var(--border);color:var(--ink);border-radius:16px 16px 16px 4px;padding:14px 18px;font-size:14px;line-height:1.7;max-width:92%;font-weight:300;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.bai .ail{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.bty{align-self:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:16px 16px 16px 4px;padding:14px 18px;display:flex;gap:5px;align-items:center}
+.td{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:tb 1.2s infinite}
+.td:nth-child(2){animation-delay:.2s}.td:nth-child(3){animation-delay:.4s}
+@keyframes tb{0%,60%,100%{transform:translateY(0);opacity:.35}30%{transform:translateY(-6px);opacity:1}}
+#chatBox{scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+#chatBox::-webkit-scrollbar{width:4px}
+#chatBox::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+@media(max-width:620px){
+  .container{padding:0 14px 80px}
+  header{padding:36px 0 28px;grid-template-columns:1fr}
+  .ldiag{display:none}
+  h1{font-size:1.65rem}
+  .auth{font-size:12px}
+  .nav-btn{font-size:12px;padding:7px 12px}
+  .st{font-size:1.25rem}
+  .srow{grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+  .sbox{padding:14px 10px}.snum{font-size:1.6rem}
+  .tcol{grid-template-columns:1fr;gap:10px}
+  .card{padding:16px 14px;border-radius:10px}
+  .card h2{font-size:1.05rem}
+  .dtable{font-size:12px}.dtable th,.dtable td{padding:8px 9px}
+  .qt{font-size:1rem}.qo{font-size:13px;padding:11px 14px}
+  .bp,.bg2{font-size:13px;padding:10px 16px}
+  .bu,.bai{font-size:13px;max-width:95%}
+  #ci{font-size:16px}
+  #sb2{padding:0 14px!important;font-size:13px!important}
+  .sch{font-size:11px;padding:4px 10px}
+}
+@media(max-width:380px){h1{font-size:1.4rem}.srow{grid-template-columns:1fr 1fr}.snum{font-size:1.4rem}}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <div>
+    <div class="jtag">JAMA Ophthalmology · May 2022</div>
+    <h1>Spectacle Lenses With<br><em>Aspherical Lenslets</em><br>for Myopia Control</h1>
+    <p class="auth">Bao, Huang, Li et al. · Wenzhou Medical University & Essilor International · RCT, 2 years</p>
+  </div>
+  <div class="ldiag" style="width:90px;height:90px">
+    <svg viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="45" cy="45" r="40" fill="none" stroke="#e2ddd4" stroke-width="2"/>
+      <circle cx="45" cy="45" r="12" fill="rgba(200,98,26,0.15)" stroke="#c8621a" stroke-width="1.5"/>
+      <circle cx="45" cy="45" r="20" fill="none" stroke="#c8621a" stroke-width="0.8" stroke-dasharray="3 2" opacity="0.6"/>
+      <circle cx="45" cy="45" r="28" fill="none" stroke="#c8621a" stroke-width="0.8" stroke-dasharray="3 2" opacity="0.4"/>
+      <circle cx="45" cy="45" r="36" fill="none" stroke="#c8621a" stroke-width="0.8" stroke-dasharray="3 2" opacity="0.25"/>
+      <circle cx="45" cy="45" r="3" fill="#c8621a"/>
+      <text x="45" y="82" text-anchor="middle" font-size="7" fill="#7a7167" font-family="Outfit">HAL design</text>
+    </svg>
+  </div>
+</header>
+
+<nav class="nav-bar">
+  <button class="nav-btn active" onclick="go('ov')">Overview</button>
+  <button class="nav-btn" onclick="go('lens')">The Lenses</button>
+  <button class="nav-btn" onclick="go('res')">Results</button>
+  <button class="nav-btn" onclick="go('wear')">Wearing Time</button>
+  <button class="nav-btn" onclick="go('safe')">Safety</button>
+  <button class="nav-btn" onclick="go('quiz')">Quiz</button>
+  <button class="nav-btn" onclick="go('ask')">Ask AI ✨</button>
+</nav>
+
+<!-- OVERVIEW -->
+<section class="section active" id="ov">
+  <div class="st">Study Overview</div>
+  <p class="ss">A 2-year double-masked RCT comparing three spectacle lens types in myopic children</p>
+  <div class="srow">
+    <div class="sbox"><div class="snum">157</div><div class="sdesc">Children completed 2 years</div></div>
+    <div class="sbox"><div class="snum">3</div><div class="sdesc">Groups: HAL, SAL, SVL</div></div>
+    <div class="sbox"><div class="snum">8–13</div><div class="sdesc">Age range (years)</div></div>
+    <div class="sbox"><div class="snum">6.5%</div><div class="sdesc">Dropout rate</div></div>
+  </div>
+  <div class="card">
+    <div class="clabel">Study Design</div>
+    <h2>What was tested?</h2>
+    <p>A double-masked randomised clinical trial at the Eye Hospital of Wenzhou Medical University, China (July 2018–Oct 2020). Children were randomly assigned 1:1:1 to one of three spectacle lens types and followed for 2 years with measurements every 6 months.</p>
+    <div class="pq"><strong>Primary question:</strong> Do spectacle lenses with aspherical lenslets slow myopia progression — and does higher asphericity produce a stronger dose-dependent effect?</div>
+  </div>
+  <div class="card">
+    <div class="clabel">Participants</div>
+    <h2>Who was enrolled?</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px">
+      <p><strong>Age:</strong> 8–13 yrs (mean 10.4)</p>
+      <p><strong>Myopia:</strong> −0.75 D to −4.75 D</p>
+      <p><strong>Astigmatism:</strong> ≤ −1.50 D</p>
+      <p><strong>BCVA:</strong> ≤ 0.05 logMAR each eye</p>
+      <p><strong>Ethnicity:</strong> Chinese (Wenzhou, China)</p>
+      <p><strong>Prior myopia Rx:</strong> None allowed</p>
+    </div>
+    <div class="pq" style="margin-top:14px"><strong>Measurements:</strong> Cycloplegic SER via Topcon KR-800 (≥30 min after cyclopentolate 1%). Axial length via Lenstar LS 900, mean of 5 readings.</div>
+  </div>
+  <div class="card">
+    <div class="clabel">Context</div>
+    <h2>Why this matters</h2>
+    <p>Myopia prevalence is projected to reach alarming levels by 2050. High myopia increases risk of retinal detachment, macular degeneration, and glaucoma. This trial tests a specific design feature — <strong>lenslet asphericity</strong> — and whether varying it creates a dose-response relationship in myopia control.</p>
+  </div>
+</section>
+
+<!-- LENSES -->
+<section class="section" id="lens">
+  <div class="st">The Three Lens Types</div>
+  <p class="ss">Understanding HAL, SAL, and SVL — what they are and how they differ</p>
+  <div class="tcol">
+    <div class="lcol hal"><span class="lbadge">HAL</span><div style="font-size:13px;color:var(--ink);font-weight:600;margin-bottom:6px">Highly Aspherical Lenslets</div><div style="font-size:12px;color:var(--muted);font-weight:300;line-height:1.5">Greater curvature deviation from sphere. Strongest peripheral myopic defocus signal.</div></div>
+    <div class="lcol sal"><span class="lbadge">SAL</span><div style="font-size:13px;color:var(--ink);font-weight:600;margin-bottom:6px">Slightly Aspherical Lenslets</div><div style="font-size:12px;color:var(--muted);font-weight:300;line-height:1.5">Moderate lenslet curvature. Intermediate defocus signal.</div></div>
+    <div class="lcol svl"><span class="lbadge">SVL</span><div style="font-size:13px;color:var(--ink);font-weight:600;margin-bottom:6px">Single-Vision Lenses</div><div style="font-size:12px;color:var(--muted);font-weight:300;line-height:1.5">Standard corrective lenses. Control group — no myopia control feature.</div></div>
+  </div>
+  <div class="card">
+    <div class="clabel">Mechanism</div>
+    <h2>How aspherical lenslets work</h2>
+    <div class="steps">
+      <div class="step"><div class="sn">1</div><div class="sb"><h4>Central correction zone</h4><p>The centre provides standard distance correction — the child sees clearly, just like single-vision lenses.</p></div></div>
+      <div class="step"><div class="sn">2</div><div class="sb"><h4>Concentric aspherical lenslet rings</h4><p>Surrounding the centre are concentric rings of small aspherical lenslets, visible as subtle rings under certain lighting.</p></div></div>
+      <div class="step"><div class="sn">3</div><div class="sb"><h4>Peripheral myopic defocus</h4><p>Lenslets focus light in front of the peripheral retina (myopic defocus), removing the hyperopic defocus signal that drives eye elongation.</p></div></div>
+      <div class="step"><div class="sn">4</div><div class="sb"><h4>Dose-response by asphericity</h4><p>Greater asphericity (HAL > SAL) produces a stronger defocus signal. This is the core hypothesis — confirmed by the results.</p></div></div>
+      <div class="step"><div class="sn">5</div><div class="sb"><h4>Axial elongation slows</h4><p>Reduced hyperopic peripheral defocus → weaker growth stimulus → slower axial elongation → slower myopia progression.</p></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="clabel">Comparison to other interventions</div>
+    <h2>How HAL compares to other myopia control options</h2>
+    <table class="dtable">
+      <thead><tr><th>Intervention</th><th>2-yr SER control (D)</th><th>2-yr AL control (mm)</th></tr></thead>
+      <tbody>
+        <tr class="hr"><td><strong>HAL (this study)</strong></td><td class="hc">0.80</td><td class="hc">0.35</td></tr>
+        <tr><td>Prismatic bifocal spectacles</td><td>0.85</td><td>0.21</td></tr>
+        <tr><td>DIMS spectacle lenses</td><td>0.44</td><td>0.34</td></tr>
+        <tr><td>SAL (this study)</td><td class="sc">0.42</td><td class="sc">0.18</td></tr>
+        <tr><td>Bifocal spectacles</td><td>0.59</td><td>0.21</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px;margin-top:8px">Values show reduction vs. single-vision controls. Differences in study populations and control group progression rates should be noted when comparing across studies.</p>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section class="section" id="res">
+  <div class="st">Key Results</div>
+  <p class="ss">2-year outcomes for SER (myopia progression) and axial length elongation</p>
+  <div class="card">
+    <div class="clabel">Spherical Equivalent Refraction — 2 years</div>
+    <h2>How much did myopia progress?</h2>
+    <p style="margin-bottom:18px">Mean SER change from baseline. All group differences statistically significant (p &lt; 0.001).</p>
+    <div class="bg">
+      <div class="bgl">Total progression at 2 years (diopters)</div>
+      <div class="br"><span class="bn">HAL</span><div class="bt"><div class="bf bhal" data-w="45" style="width:0">−0.66 D</div></div></div>
+      <div class="br"><span class="bn">SAL</span><div class="bt"><div class="bf bsal" data-w="71" style="width:0">−1.04 D</div></div></div>
+      <div class="br"><span class="bn">SVL</span><div class="bt"><div class="bf bsvl" data-w="100" style="width:0">−1.46 D</div></div></div>
+    </div>
+    <div class="bg">
+      <div class="bgl">Reduction vs SVL (treatment effect)</div>
+      <div class="br"><span class="bn">HAL</span><div class="bt"><div class="bf bhal" data-w="80" style="width:0">0.80 D (55%)</div></div></div>
+      <div class="br"><span class="bn">SAL</span><div class="bt"><div class="bf bsal" data-w="42" style="width:0">0.42 D (29%)</div></div></div>
+    </div>
+    <div class="pq">HAL slowed myopia by <strong>0.80 D (55%)</strong> and SAL by <strong>0.42 D (29%)</strong> vs SVL. HAL also significantly outperformed SAL by 0.38 D (p = 0.002).</div>
+  </div>
+  <div class="card">
+    <div class="clabel">Axial Length — 2 years</div>
+    <h2>How much did the eye elongate?</h2>
+    <p style="margin-bottom:18px">Mean axial length increase from baseline (mm). All differences significant (p &lt; 0.001).</p>
+    <div class="bg">
+      <div class="bgl">Total axial elongation at 2 years (mm)</div>
+      <div class="br"><span class="bn">HAL</span><div class="bt"><div class="bf bhal" data-w="49" style="width:0">0.34 mm</div></div></div>
+      <div class="br"><span class="bn">SAL</span><div class="bt"><div class="bf bsal" data-w="74" style="width:0">0.51 mm</div></div></div>
+      <div class="br"><span class="bn">SVL</span><div class="bt"><div class="bf bsvl" data-w="100" style="width:0">0.69 mm</div></div></div>
+    </div>
+    <div class="bg">
+      <div class="bgl">Reduction vs SVL (mm)</div>
+      <div class="br"><span class="bn">HAL</span><div class="bt"><div class="bf bhal" data-w="75" style="width:0">0.35 mm (51%)</div></div></div>
+      <div class="br"><span class="bn">SAL</span><div class="bt"><div class="bf bsal" data-w="38" style="width:0">0.18 mm (26%)</div></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="clabel">Year 1 vs Year 2</div>
+    <h2>Did efficacy hold in the second year?</h2>
+    <table class="dtable">
+      <thead><tr><th>Lens</th><th>Year 2 SER vs SVL</th><th>Sustained?</th></tr></thead>
+      <tbody>
+        <tr><td class="hc">HAL</td><td>Still significant (−0.39 D; p &lt; 0.001)</td><td><span class="chip cg">✓ Yes</span></td></tr>
+        <tr><td class="sc">SAL</td><td>Not significant (p = 0.90)</td><td><span class="chip cr">✗ Year 1 only</span></td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:10px">HAL maintained its effect across both years. SAL's benefit was concentrated in year 1 — possibly reflecting a dose-response relationship between asphericity and <em>duration</em> of efficacy.</p>
+  </div>
+</section>
+
+<!-- WEARING TIME -->
+<section class="section" id="wear">
+  <div class="st">Wearing Time Effect</div>
+  <p class="ss">Does how long the child wears the lenses each day change the outcome?</p>
+  <div class="card">
+    <div class="clabel">Dose-Response by Wear Hours</div>
+    <h2>Full-time vs. part-time wearers</h2>
+    <p><strong>Full-time:</strong> ≥12 hours/day &nbsp;|&nbsp; <strong>Part-time:</strong> &lt;12 hours/day</p>
+    <table class="dtable" style="margin-top:16px">
+      <thead><tr><th>Group</th><th>Wear type</th><th>SER (D)</th><th>AL (mm)</th></tr></thead>
+      <tbody>
+        <tr class="hr"><td class="hc">HAL</td><td>Full-time</td><td class="hc">−0.48</td><td class="hc">0.28</td></tr>
+        <tr><td class="hc">HAL</td><td>Part-time</td><td>−0.93</td><td>0.43</td></tr>
+        <tr><td class="sc">SAL</td><td>Full-time</td><td>−0.95</td><td>0.46</td></tr>
+        <tr><td class="sc">SAL</td><td>Part-time</td><td>−1.15</td><td>0.57</td></tr>
+        <tr><td class="vc">SVL</td><td>Full-time</td><td>−1.44</td><td>0.69</td></tr>
+        <tr><td class="vc">SVL</td><td>Part-time</td><td>−1.50</td><td>0.70</td></tr>
+      </tbody>
+    </table>
+    <div class="pq" style="margin-top:14px;border-color:var(--accent3);background:rgba(15,126,90,.05)">HAL full-time wearers achieved <strong>0.99 D (67%)</strong> SER reduction and <strong>0.41 mm (60%)</strong> AL reduction vs SVL — the best result in the trial. Wearing time only significantly affected HAL outcomes (SER p=0.01; AL p=0.03), not SAL or SVL.</div>
+  </div>
+  <div class="card">
+    <div class="clabel">Adherence over time</div>
+    <h2>How did wearing hours evolve?</h2>
+    <div class="srow" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="sbox"><div class="snum">13.4</div><div class="sdesc">Mean hrs/day (HAL & SAL)</div></div>
+      <div class="sbox"><div class="snum">61%</div><div class="sdesc">Full-time wearers yr 1</div></div>
+      <div class="sbox"><div class="snum">89%</div><div class="sdesc">Full-time wearers yr 2</div></div>
+    </div>
+    <p style="margin-top:4px">Mean wearing time increased from 13.1 hrs (yr 1) to 14.0 hrs (yr 2, p &lt; 0.001), suggesting children adapted well to lenslets over time.</p>
+  </div>
+  <div class="card">
+    <div class="clabel">Clinical implication</div>
+    <h2>Key takeaway</h2>
+    <p>For HAL, full-time wear (≥12 hrs/day) substantially improves outcomes. Clinicians should counsel families accordingly. The improving adherence over time suggests initial adjustment barriers are transient.</p>
+    <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:8px">
+      <span class="chip cg">HAL full-time: 67% SER reduction</span>
+      <span class="chip co">HAL part-time: 37% SER reduction</span>
+      <span class="chip cw">SAL: no wear-time effect</span>
+    </div>
+  </div>
+</section>
+
+<!-- SAFETY -->
+<section class="section" id="safe">
+  <div class="st">Safety & Limitations</div>
+  <p class="ss">Adverse events, study strengths, and caveats when interpreting findings</p>
+  <div class="card">
+    <div class="clabel">Safety profile</div>
+    <h2>Adverse events over 2 years</h2>
+    <div class="srow" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="sbox" style="border-color:rgba(15,126,90,.3)"><div class="snum" style="color:var(--accent3)">0</div><div class="sdesc">Severe adverse events</div></div>
+      <div class="sbox"><div class="snum">2</div><div class="sdesc">Mild, unrelated events</div></div>
+      <div class="sbox" style="border-color:rgba(15,126,90,.3)"><div class="snum" style="color:var(--accent3)">0</div><div class="sdesc">Device-related discontinuations</div></div>
+    </div>
+    <p style="margin-top:8px">One SVL wearer had punctate corneal epithelial defects; one SAL wearer was hit by a ball causing frame breakage and bruising. Neither was device-related. No significant difference between groups (p = 0.59).</p>
+    <div class="pq" style="border-color:var(--accent3);background:rgba(15,126,90,.05);margin-top:14px">✓ Both HAL and SAL demonstrated a clean safety profile over 2 years in children aged 8–13.</div>
+  </div>
+  <div class="card">
+    <div class="clabel">Strengths</div>
+    <h2>What makes this a strong study?</h2>
+    <div class="steps">
+      <div class="step"><div class="sn" style="background:var(--accent3)">✓</div><div class="sb"><h4>Double-masked RCT</h4><p>Examiners and participants masked to HAL vs SAL allocation. Complete masking achieved between HAL and SAL (not possible vs SVL due to visible lenslets).</p></div></div>
+      <div class="step"><div class="sn" style="background:var(--accent3)">✓</div><div class="sb"><h4>Low dropout rate (6.5%)</h4><p>Only 13 of 170 enrolled did not complete 2 years. Dropout reasons were unrelated to the study devices.</p></div></div>
+      <div class="step"><div class="sn" style="background:var(--accent3)">✓</div><div class="sb"><h4>Short recruitment window (~2 months)</h4><p>Reduced confounding from seasonal variation in myopia progression, a known source of bias.</p></div></div>
+      <div class="step"><div class="sn" style="background:var(--accent3)">✓</div><div class="sb"><h4>Cycloplegic SER + axial length</h4><p>Both refractive and structural endpoints measured, providing a comprehensive picture of myopia control.</p></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="clabel">Limitations</div>
+    <h2>What should temper the conclusions?</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+      <span class="chip cr">Chinese cohort only</span>
+      <span class="chip cr">Self-reported wear time</span>
+      <span class="chip cr">18-mo visit delayed 3 wks (COVID)</span>
+      <span class="chip cr">Outdoor time not measured</span>
+      <span class="chip cr">Right eye only analysed</span>
+      <span class="chip cr">Essilor funded & co-authored</span>
+    </div>
+    <p>Results from a high-myopia-prevalence Chinese cohort may not generalise globally. Self-reported wearing hours may over-estimate actual wear. The 18-month visit was delayed ~3 weeks due to COVID-19, which also interrupted school attendance for 4 months, potentially affecting myopia progression via increased indoor time. Essilor International (maker of HAL/SAL lenses) co-funded the study and had employees as co-authors — a notable conflict of interest to be aware of.</p>
+  </div>
+</section>
+
+<!-- QUIZ -->
+<section class="section" id="quiz">
+  <div class="st">Knowledge Check</div>
+  <p class="ss">Test your understanding of the HAL/SAL trial</p>
+  <div class="card" id="qCard">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <span class="qp" id="qProg">Question 1 of 7</span>
+      <span class="stag" id="qScore">Score: 0</span>
+    </div>
+    <div id="qContent"></div>
+    <div class="qnav">
+      <button class="bg2" onclick="prevQ()" id="prevBtn" disabled>← Back</button>
+      <button class="bp" onclick="nextQ()" id="nextBtn" disabled>Next →</button>
+    </div>
+  </div>
+  <div id="qSummary" style="display:none">
+    <div class="card" style="text-align:center;padding:36px 24px">
+      <div class="rring">
+        <svg viewBox="0 0 130 130" width="130" height="130">
+          <circle class="rb" cx="65" cy="65" r="52"/>
+          <circle class="rf" id="rFill" cx="65" cy="65" r="52" stroke-dasharray="327" stroke-dashoffset="327"/>
+        </svg>
+        <div class="ri"><div class="rn" id="rScore">0/7</div><div class="rl">Score</div></div>
+      </div>
+      <h2 style="font-family:'Fraunces',serif;font-size:1.3rem;margin-bottom:10px">Quiz Complete</h2>
+      <p id="rMsg" style="color:var(--muted);font-weight:300;margin-bottom:24px;font-size:14px"></p>
+      <button class="bp" onclick="resetQuiz()">Retake</button>
+    </div>
+  </div>
+</section>
+
+<!-- ASK AI -->
+<section class="section" id="ask">
+  <div class="st">Ask the Study</div>
+  <p class="ss">Ask anything about this research or aspherical lenslet lenses — powered by AI</p>
+  <div class="card">
+    <div id="chatBox" style="min-height:80px;max-height:440px;overflow-y:auto;margin-bottom:20px;display:flex;flex-direction:column;gap:14px;padding-right:4px"></div>
+    <div id="suggBox" style="margin-bottom:16px">
+      <p style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px">Try asking</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <button class="sch" onclick="useS(this)">What is lenslet asphericity?</button>
+        <button class="sch" onclick="useS(this)">Why did SAL stop working in year 2?</button>
+        <button class="sch" onclick="useS(this)">How do HAL lenses compare to Ortho-K?</button>
+        <button class="sch" onclick="useS(this)">What does axial length mean?</button>
+        <button class="sch" onclick="useS(this)">Should my child wear HAL lenses?</button>
+        <button class="sch" onclick="useS(this)">What are the main limitations?</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:flex-end">
+      <textarea id="ci" placeholder="Ask anything about this study…" rows="2"
+        style="flex:1;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--ink);font-family:'Outfit',sans-serif;font-size:14px;resize:none;line-height:1.5;outline:none;transition:border-color .18s;"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendQ2();}"
+        onfocus="this.style.borderColor='var(--accent)'"
+        onblur="this.style.borderColor='var(--border)'"
+      ></textarea>
+      <button class="bp" id="sb2" onclick="sendQ2()" style="height:46px;padding:0 20px;flex-shrink:0">Send ↑</button>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-top:8px">Enter to send · Shift+Enter for new line</p>
+  </div>
+</section>
+
+</div>
+<script>
+const SEC=['ov','lens','res','wear','safe','quiz','ask'];
+function go(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('active',SEC[i]===id));
+  document.getElementById(id).classList.add('active');
+  if(id==='res')setTimeout(()=>{document.querySelectorAll('.bf[data-w]').forEach(b=>{b.style.width=b.dataset.w+'%'})},200);
+}
+const QS=[
+  {q:"What was the primary outcome measure of this randomised clinical trial?",opts:["Intraocular pressure change","Changes in SER and axial length","Visual acuity at distance","Lens wearing hours per day"],ans:1,exp:"The co-primary outcomes were 2-year changes in cycloplegic SER and axial length, measured every 6 months."},
+  {q:"Over 2 years, by how much did HAL reduce myopia progression compared to SVL?",opts:["0.38 D (37%)","0.42 D (29%)","0.80 D (55%)","0.99 D (67%)"],ans:2,exp:"HAL reduced SER progression by 0.80 D (55%) vs SVL. The 0.99 D (67%) applies specifically to HAL full-time wearers (≥12 hrs/day)."},
+  {q:"In year 2 alone, which lens type stopped showing significant benefit compared to SVL?",opts:["HAL","SAL","Both HAL and SAL","Neither"],ans:1,exp:"SAL showed no significant difference from SVL in year 2 (SER p=0.90). HAL continued to significantly outperform SVL throughout year 2."},
+  {q:"What happened to lens wearing time from year 1 to year 2?",opts:["It decreased","It stayed the same","It increased significantly","It was not measured"],ans:2,exp:"Mean daily wear increased from 13.1 hrs (yr 1) to 14.0 hrs (yr 2, p<0.001). Full-time wearers grew from 61% to 89%."},
+  {q:"For which lens group did wearing time significantly affect myopia control outcomes?",opts:["SVL only","SAL only","HAL only","All three groups equally"],ans:2,exp:"Only HAL showed a significant difference between full-time and part-time wearers (SER p=0.01; AL p=0.03). Wearing time had no significant effect for SAL or SVL."},
+  {q:"How many severe adverse events were reported across all groups over 2 years?",opts:["None","Two device-related","Two unrelated to device","Five across all groups"],ans:0,exp:"No severe adverse events occurred. Two mild unrelated events happened — punctate corneal defects in one SVL wearer, and a bruise from a ball hit in one SAL wearer."},
+  {q:"Which of the following is a stated limitation of this study?",opts:["No control group was used","Wearing time was self-reported","Axial length was not measured","The study lasted only 6 months"],ans:1,exp:"The authors noted that wearing hours were assessed via self-reported questionnaires rather than an objective measure, which may not accurately reflect actual wear."}
+];
+let qi=0,qs=0,qa=false;
+function renderQ(){
+  qa=false;const q=QS[qi];
+  document.getElementById('qProg').textContent=`Question ${qi+1} of ${QS.length}`;
+  document.getElementById('nextBtn').disabled=true;
+  document.getElementById('prevBtn').disabled=qi===0;
+  document.getElementById('nextBtn').textContent=qi<QS.length-1?'Next →':'See Results';
+  document.getElementById('qContent').innerHTML=`<div class="qt">${q.q}</div><div class="qopts">${q.opts.map((o,i)=>`<button class="qo" onclick="checkA(${i})">${o}</button>`).join('')}</div><div class="qfb" id="qfb"></div>`;
+}
+function checkA(i){
+  if(qa)return;qa=true;const q=QS[qi];
+  document.querySelectorAll('.qo').forEach(b=>b.disabled=true);
+  document.querySelectorAll('.qo')[q.ans].classList.add('correct');
+  if(i!==q.ans)document.querySelectorAll('.qo')[i].classList.add('wrong');
+  else qs++;
+  document.getElementById('qScore').textContent=`Score: ${qs}`;
+  const f=document.getElementById('qfb');
+  f.textContent=(i===q.ans?'✅ Correct! ':'❌ Incorrect. ')+q.exp;
+  f.className='qfb show '+(i===q.ans?'ok':'bad');
+  document.getElementById('nextBtn').disabled=false;
+}
+function nextQ(){if(qi<QS.length-1){qi++;renderQ();}else showRes();}
+function prevQ(){if(qi>0){qi--;renderQ();}}
+function showRes(){
+  document.getElementById('qCard').style.display='none';
+  document.getElementById('qSummary').style.display='block';
+  document.getElementById('rScore').textContent=`${qs}/${QS.length}`;
+  const p=qs/QS.length;
+  document.getElementById('rMsg').textContent=p<0.4?'Keep reviewing — re-read the sections.':p<0.6?'Good effort! A few areas to revisit.':p<0.86?'Solid understanding of the trial.':'Excellent — you\'ve mastered this study!';
+  setTimeout(()=>{const c=2*Math.PI*52;document.getElementById('rFill').style.strokeDashoffset=c-p*c;},200);
+}
+function resetQuiz(){qi=0;qs=0;document.getElementById('qCard').style.display='block';document.getElementById('qSummary').style.display='none';document.getElementById('qScore').textContent='Score: 0';renderQ();}
+renderQ();
+
+const CTX=`You are an expert tutor helping someone learn from a clinical research paper. Answer clearly and helpfully, referencing study data when relevant.
+
+KEY FACTS — "Spectacle Lenses With Aspherical Lenslets for Myopia Control vs Single-Vision Spectacle Lenses"
+Authors: Bao, Huang, Li et al. JAMA Ophthalmology 2022;140(5):472-478
+Design: 2-year double-masked RCT, Wenzhou Medical University, China (Jul 2018–Oct 2020)
+Groups: HAL (highly aspherical lenslets, n=54), SAL (slightly aspherical lenslets, n=53), SVL controls (n=50); 157 completed; 1:1:1 randomisation; ages 8–13; mean 10.4 yrs
+Myopia at entry: −0.75 to −4.75 D; astigmatism ≤ −1.50 D
+Primary outcomes: 2-year SER and axial length change
+SER at 2 yrs: HAL −0.66 D, SAL −1.04 D, SVL −1.46 D
+Treatment effect vs SVL: HAL 0.80 D (55%), SAL 0.42 D (29%); HAL vs SAL 0.38 D (37%)
+Axial length: HAL 0.34 mm, SAL 0.51 mm, SVL 0.69 mm; reductions: HAL 0.35 mm (51%), SAL 0.18 mm (26%)
+Year 2 only: HAL still significant vs SVL; SAL NOT significant (p=0.90)
+Full-time wearers (≥12 hrs/day): HAL full-time = 0.99 D (67%) SER, 0.41 mm (60%) AL vs SVL
+Wear time effect only significant for HAL (not SAL/SVL)
+Mean daily wear: 13.4 hrs HAL/SAL; full-timers grew 61%→89% yr1→yr2
+Safety: no severe AEs; 2 mild unrelated events; no device-related discontinuations
+Mechanism: aspherical lenslets create peripheral myopic defocus; higher asphericity = stronger signal = better control
+Comparison: HAL (0.80D) ≈ prismatic bifocal (0.85D); DIMS (0.44D) ≈ SAL (0.42D)
+Strengths: double-masked RCT, 6.5% dropout, short recruitment, cycloplegic SER + axial length
+Limitations: Chinese cohort, self-reported wear time, COVID delayed 18-mo visit, outdoor time unmeasured, right eye only
+COI: Yang/Spiegel/Drobe/Lim are Essilor employees; Essilor co-funded and co-designed the study`;
+
+let ch2=[],il2=false;
+function useS(b){document.getElementById('ci').value=b.textContent;document.getElementById('ci').focus();}
+function addMsg(role,text){
+  const box=document.getElementById('chatBox');
+  const d=document.createElement('div');
+  if(role==='user'){d.className='bu';d.textContent=text;}
+  else{d.className='bai';d.innerHTML=`<div class="ail">AI Tutor</div><div>${text.replace(/\n/g,'<br>')}</div>`;}
+  box.appendChild(d);box.scrollTop=box.scrollHeight;
+}
+function addTyp(){const box=document.getElementById('chatBox');const d=document.createElement('div');d.className='bty';d.id='typ';d.innerHTML='<div class="td"></div><div class="td"></div><div class="td"></div>';box.appendChild(d);box.scrollTop=box.scrollHeight;}
+function rmTyp(){const e=document.getElementById('typ');if(e)e.remove();}
+async function sendQ2(){
+  if(il2)return;
+  const inp=document.getElementById('ci');const q=inp.value.trim();if(!q)return;
+  document.getElementById('suggBox').style.display='none';
+  inp.value='';il2=true;document.getElementById('sb2').disabled=true;
+  addMsg('user',q);ch2.push({role:'user',content:q});addTyp();
+  try{
+    const msgs=[{role:'user',content:CTX+'\n\nAnswer the user\'s questions about this study.'},{role:'assistant',content:'Understood. I will answer questions about this aspherical lenslet study.'},...ch2];
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:msgs})});
+    const data=await res.json();rmTyp();
+    const reply=data.content?.[0]?.text||'Sorry, no response. Please try again.';
+    ch2.push({role:'assistant',content:reply});addMsg('ai',reply);
+  }catch(e){rmTyp();addMsg('ai','Connection error. Please try again.');}
+  il2=false;document.getElementById('sb2').disabled=false;inp.focus();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ortho-K Learning App</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #1e2d47;
+    --accent: #00c9a7;
+    --accent2: #3b82f6;
+    --accent3: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --danger: #ef4444;
+    --success: #10b981;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,201,167,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,201,167,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    padding: 60px 0 48px;
+  }
+
+  .eyeball-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 24px;
+    background: radial-gradient(circle at 38% 38%, #fff 30%, #3b82f6 60%, #1e3a6e 100%);
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    box-shadow: 0 0 40px rgba(59,130,246,0.4), 0 0 0 3px rgba(0,201,167,0.3);
+    position: relative;
+    animation: pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 40px rgba(59,130,246,0.4), 0 0 0 3px rgba(0,201,167,0.3); }
+    50% { box-shadow: 0 0 60px rgba(59,130,246,0.6), 0 0 0 6px rgba(0,201,167,0.5); }
+  }
+
+  .eyeball-icon::after {
+    content: '';
+    position: absolute;
+    width: 20px; height: 20px;
+    background: #000;
+    border-radius: 50%;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: inset 0 0 0 3px #1e3a6e;
+  }
+
+  .tag {
+    display: inline-block;
+    background: rgba(0,201,167,0.1);
+    border: 1px solid rgba(0,201,167,0.3);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 4px 14px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 900;
+    line-height: 1.15;
+    background: linear-gradient(135deg, #e2e8f0, #00c9a7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 16px;
+    max-width: 520px;
+    margin: 0 auto 40px;
+    line-height: 1.6;
+  }
+
+  /* PROGRESS NAV */
+  .nav-bar {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 48px;
+  }
+
+  .nav-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .nav-btn.active {
+    background: rgba(0,201,167,0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .nav-btn .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  /* SECTIONS */
+  .section { display: none; animation: fadeIn 0.4s ease; }
+  .section.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .card-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .card h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .card p { color: var(--muted); line-height: 1.7; font-size: 15px; }
+
+  /* HIGHLIGHT BOX */
+  .highlight {
+    background: rgba(0,201,167,0.06);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* STATS GRID */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
+
+  .stat-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+
+  .stat-card:hover { transform: translateY(-3px); border-color: var(--accent2); }
+
+  .stat-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #00c9a7, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* COMPARISON BARS */
+  .compare-chart { margin: 24px 0; }
+  .compare-row { margin-bottom: 20px; }
+  .compare-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 8px;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .bar-wrap { background: var(--surface2); border-radius: 8px; height: 14px; overflow: hidden; }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 8px;
+    transition: width 1s cubic-bezier(.4,0,.2,1);
+  }
+
+  .bar-ok { background: linear-gradient(90deg, #00c9a7, #3b82f6); }
+  .bar-ctrl { background: linear-gradient(90deg, #ef4444, #f59e0b); }
+
+  .bar-legend {
+    display: flex;
+    gap: 24px;
+    font-size: 12px;
+    margin-top: 16px;
+  }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+
+  /* MECHANISM STEPS */
+  .steps { counter-reset: step; }
+  .step-item {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .step-num {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(0,201,167,0.1);
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-content h4 {
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--text);
+    font-size: 15px;
+  }
+  .step-content p { color: var(--muted); font-size: 14px; line-height: 1.6; }
+
+
+  /* ASK AI */
+  .sugg-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .sugg-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,201,167,0.06); }
+
+  .bubble-user {
+    align-self: flex-end;
+    background: rgba(0,201,167,0.12);
+    border: 1px solid rgba(0,201,167,0.25);
+    color: var(--text);
+    border-radius: 16px 16px 4px 16px;
+    padding: 12px 16px;
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 85%;
+  }
+  .bubble-ai {
+    align-self: flex-start;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 16px 16px 16px 4px;
+    padding: 14px 18px;
+    font-size: 14px;
+    line-height: 1.7;
+    max-width: 92%;
+  }
+  .bubble-ai .ai-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .bubble-typing {
+    align-self: flex-start;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 16px 16px 16px 4px;
+    padding: 14px 18px;
+    display: flex;
+    gap: 5px;
+    align-items: center;
+  }
+  .typing-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: typingBounce 1.2s infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-6px); opacity: 1; }
+  }
+  #chatHistory::-webkit-scrollbar { width: 4px; }
+  #chatHistory::-webkit-scrollbar-track { background: transparent; }
+  #chatHistory::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* QUIZ */
+  .quiz-question {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    color: var(--text);
+    margin-bottom: 24px;
+    line-height: 1.4;
+  }
+
+  .quiz-options { display: flex; flex-direction: column; gap: 12px; }
+
+  .quiz-option {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 20px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    text-align: left;
+    transition: all 0.2s;
+    width: 100%;
+  }
+
+  .quiz-option:hover:not(:disabled) {
+    border-color: var(--accent2);
+    background: rgba(59,130,246,0.08);
+  }
+  .quiz-option.correct { border-color: var(--success); background: rgba(16,185,129,0.1); color: var(--success); }
+  .quiz-option.wrong { border-color: var(--danger); background: rgba(239,68,68,0.1); color: var(--danger); }
+  .quiz-option:disabled { cursor: not-allowed; }
+
+  .quiz-feedback {
+    display: none;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    margin-top: 16px;
+    line-height: 1.6;
+  }
+  .quiz-feedback.show { display: block; }
+  .quiz-feedback.ok { background: rgba(16,185,129,0.1); border: 1px solid var(--success); color: var(--success); }
+  .quiz-feedback.bad { background: rgba(239,68,68,0.1); border: 1px solid var(--danger); color: var(--danger); }
+
+  .quiz-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 24px;
+  }
+
+  .btn {
+    background: var(--accent);
+    color: #0a0e1a;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  .score-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    color: var(--accent3);
+    font-weight: 600;
+  }
+
+  /* TIMELINE */
+  .timeline { position: relative; padding-left: 28px; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 6px; top: 6px; bottom: 6px;
+    width: 2px;
+    background: linear-gradient(180deg, var(--accent), var(--accent2), transparent);
+  }
+  .tl-item { position: relative; margin-bottom: 28px; }
+  .tl-dot {
+    position: absolute;
+    left: -28px; top: 4px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg);
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+  .tl-year {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .tl-text { color: var(--muted); font-size: 14px; line-height: 1.6; }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.7rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .section-sub {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 32px;
+  }
+
+  /* PILL TAGS */
+  .pill {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin: 3px;
+  }
+  .pill-green { background: rgba(16,185,129,0.15); color: var(--success); }
+  .pill-blue { background: rgba(59,130,246,0.15); color: var(--accent2); }
+  .pill-amber { background: rgba(245,158,11,0.15); color: var(--accent3); }
+  .pill-red { background: rgba(239,68,68,0.15); color: var(--danger); }
+
+  /* SUMMARY SCREEN */
+  .summary-ring {
+    width: 140px; height: 140px;
+    margin: 0 auto 24px;
+    position: relative;
+  }
+  .summary-ring svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--surface2); stroke-width: 12; }
+  .ring-fill { fill: none; stroke: var(--accent); stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+  .ring-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Playfair Display', serif;
+  }
+  .ring-score { font-size: 2rem; font-weight: 900; color: var(--accent); }
+  .ring-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* Animated bars on load */
+  .bar-fill[data-width] { width: 0; }
+
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="eyeball-icon"></div>
+    <div class="tag">Clinical Study · BMC Ophthalmology 2017</div>
+    <h1>Orthokeratology &<br>Myopia Control</h1>
+    <p class="subtitle">An interactive guide to the 12-year retrospective study on overnight Ortho-K efficacy in myopic children</p>
+  </header>
+
+  <!-- NAV -->
+  <nav class="nav-bar">
+    <button class="nav-btn active" onclick="showSection('overview')"><span class="dot"></span>Overview</button>
+    <button class="nav-btn" onclick="showSection('mechanism')"><span class="dot"></span>How It Works</button>
+    <button class="nav-btn" onclick="showSection('results')"><span class="dot"></span>Key Results</button>
+    <button class="nav-btn" onclick="showSection('factors')"><span class="dot"></span>Risk Factors</button>
+    <button class="nav-btn" onclick="showSection('safety')"><span class="dot"></span>Safety</button>
+    <button class="nav-btn" onclick="showSection('quiz')"><span class="dot"></span>Quiz</button>
+    <button class="nav-btn" onclick="showSection('ask')"><span class="dot"></span>Ask AI ✨</button>
+  </nav>
+
+  <!-- ── OVERVIEW ── -->
+  <section class="section active" id="overview">
+    <div class="section-title">Study Overview</div>
+    <p class="section-sub">Lee, Wang & Chiu · Buddhist Tzu Chi General Hospital, Taiwan</p>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">66</div>
+        <div class="stat-label">Ortho-K children</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">36</div>
+        <div class="stat-label">Control subjects</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">12</div>
+        <div class="stat-label">Years follow-up</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">203</div>
+        <div class="stat-label">Eyes analyzed</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(0,201,167,0.1)">📋</div>
+        <h2>Study Design</h2>
+      </div>
+      <p>A retrospective cohort study enrolling school-age children (ages 7–16) who used overnight orthokeratology between 1998 and 2013. Controls were age- and refraction-matched spectacle wearers from the same clinic.</p>
+      <div class="highlight">
+        <strong>Key question:</strong> Does overnight Ortho-K slow myopia progression over a period much longer than the typical 1–3 year studies — specifically up to 12 years?
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(59,130,246,0.1)">🧒</div>
+        <h2>Patient Characteristics</h2>
+      </div>
+      <div class="two-col">
+        <div>
+          <p style="margin-bottom:8px"><strong style="color:var(--text)">Age range</strong></p>
+          <p>7 – 16 years old<br>(mean 11.7 yrs)</p>
+        </div>
+        <div>
+          <p style="margin-bottom:8px"><strong style="color:var(--text)">Myopia range</strong></p>
+          <p>−0.5 D to −8.0 D<br>(mean −3.70 D)</p>
+        </div>
+        <div>
+          <p style="margin-bottom:8px"><strong style="color:var(--text)">Astigmatism range</strong></p>
+          <p>0 D to −3.0 D<br>(mean −0.55 D)</p>
+        </div>
+        <div>
+          <p style="margin-bottom:8px"><strong style="color:var(--text)">Mean follow-up</strong></p>
+          <p>6.32 years<br>(range 1–13 yrs)</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(245,158,11,0.1)">📅</div>
+        <h2>Historical Timeline</h2>
+      </div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-year">1950s</div><div class="tl-text">Wesley & Jessen describe "spectacle blur" — corneal reshaping from hard lenses</div></div>
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-year">1970s</div><div class="tl-text">Rigid gas-permeable lenses improve oxygen permeability and comfort</div></div>
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-year">1989</div><div class="tl-text">Richard Wlodyga introduces first reverse geometry lens; corrects up to −1.7 D</div></div>
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-year">1998–2013</div><div class="tl-text">Study enrollment period at Tzu Chi General Hospital, Taiwan</div></div>
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-year">2017</div><div class="tl-text">Publication of 12-year results in <em>BMC Ophthalmology</em></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── MECHANISM ── -->
+  <section class="section" id="mechanism">
+    <div class="section-title">How Ortho-K Works</div>
+    <p class="section-sub">The biological and optical mechanism behind overnight corneal reshaping</p>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(0,201,167,0.1)">🔬</div>
+        <h2>The Reverse Geometry Lens</h2>
+      </div>
+      <p>Orthokeratology lenses have a much <strong style="color:var(--accent)">flatter central base curve</strong> than the secondary curve. This creates a differential pressure profile across the cornea during sleep.</p>
+      <div class="highlight">
+        <strong>Pressure mechanics:</strong> Positive pushing pressure against the <em>central</em> cornea + negative pulling pressure against the <em>mid-peripheral</em> cornea → epithelial cells redistribute outward, flattening the centre.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(59,130,246,0.1)">👁️</div>
+        <h2>Step-by-Step Process</h2>
+      </div>
+      <div class="steps">
+        <div class="step-item"><div class="step-num">1</div><div class="step-content"><h4>Lens worn overnight (6–8 hrs)</h4><p>Reverse geometry lens placed on eye before sleep; patient wears during the night</p></div></div>
+        <div class="step-item"><div class="step-num">2</div><div class="step-content"><h4>Central epithelium thins</h4><p>Positive pressure flattens the central cornea by redistributing epithelial cells toward the mid-periphery</p></div></div>
+        <div class="step-item"><div class="step-num">3</div><div class="step-content"><h4>Plateau-shaped cornea forms</h4><p>Light is now refracted simultaneously onto both the macula and the mid-peripheral retina</p></div></div>
+        <div class="step-item"><div class="step-num">4</div><div class="step-content"><h4>Peripheral myopic defocus created</h4><p>Mid-peripheral retina receives myopic (not hyperopic) defocus, which is believed to <em>inhibit</em> eye growth signals</p></div></div>
+        <div class="step-item"><div class="step-num">5</div><div class="step-content"><h4>Axial elongation slows</h4><p>Reduced peripheral hyperopic defocus → less stimulus for axial elongation → slower myopia progression</p></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(245,158,11,0.1)">⚠️</div>
+        <h2>Why Peripheral Defocus Matters</h2>
+      </div>
+      <p>Hyperopic peripheral defocus (light focuses behind the peripheral retina) is commonly found in myopic children and is believed to <strong style="color:var(--danger)">encourage eye growth</strong>. Ortho-K flips this signal toward myopic defocus, potentially stabilising axial length.</p>
+      <br>
+      <p>The lens used in this study: <strong style="color:var(--text)">Dreimlens® (Macro Vision Corp., Taiwan)</strong> — a fluorosilicone acrylate material, Dk 127, diameter 10.4–11.2 mm, central thickness 0.22 mm.</p>
+    </div>
+  </section>
+
+  <!-- ── RESULTS ── -->
+  <section class="section" id="results">
+    <div class="section-title">Key Results</div>
+    <p class="section-sub">Refractive error progression: Ortho-K vs. spectacle controls over 12 years</p>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(0,201,167,0.1)">📊</div>
+        <h2>Progression Rate Comparison</h2>
+      </div>
+      <p style="margin-bottom:20px">Mean refractive error change per 2-year period (diopters/year). Ortho-K group showed significantly lower progression at every interval (p &lt; 0.001).</p>
+
+      <div class="compare-chart" id="chartArea">
+        <div class="compare-row">
+          <div class="compare-label"><span>Years 0–2</span><span style="color:var(--accent)">OK: 0.17 D/yr</span></div>
+          <div class="bar-wrap"><div class="bar-fill bar-ok" data-width="22" style="width:0%"></div></div>
+        </div>
+        <div class="compare-row">
+          <div class="compare-label"><span>Years 0–2 (Control)</span><span style="color:var(--danger)">0.52 D/yr</span></div>
+          <div class="bar-wrap"><div class="bar-fill bar-ctrl" data-width="66" style="width:0%"></div></div>
+        </div>
+        <div style="height:12px"></div>
+        <div class="compare-row">
+          <div class="compare-label"><span>Years 2–4</span><span style="color:var(--accent)">OK: 0.23 D/yr</span></div>
+          <div class="bar-wrap"><div class="bar-fill bar-ok" data-width="29" style="width:0%"></div></div>
+        </div>
+        <div class="compare-row">
+          <div class="compare-label"><span>Years 2–4 (Control)</span><span style="color:var(--danger)">0.50 D/yr</span></div>
+          <div class="bar-wrap"><div class="bar-fill bar-ctrl" data-width="63" style="width:0%"></div></div>
+        </div>
+        <div style="height:12px"></div>
+        <div class="compare-row">
+          <div class="compare-label"><span>Years 4–6</span><span style="color:var(--accent)">OK: 0.28 D/yr</span></div>
+          <div class="bar-wrap"><div class="bar-fill bar-ok" data-width="35" style="width:0%"></div></div>
+        </div>
+        <div class="compare-row">
+          <div class="compare-label"><span>Years 4–6 (Control)</span><span style="color:var(--danger)">0.47 D/yr</span></div>
+          <div class="bar-wrap"><div class="bar-fill bar-ctrl" data-width="59" style="width:0%"></div></div>
+        </div>
+        <div style="height:12px"></div>
+        <div class="compare-row">
+          <div class="compare-label"><span>Years 6–8</span><span style="color:var(--accent)">OK: 0.32 D/yr</span></div>
+          <div class="bar-wrap"><div class="bar-fill bar-ok" data-width="40" style="width:0%"></div></div>
+        </div>
+        <div class="compare-row">
+          <div class="compare-label"><span>Years 6–8 (Control)</span><span style="color:var(--danger)">0.37 D/yr</span></div>
+          <div class="bar-wrap"><div class="bar-fill bar-ctrl" data-width="46" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <div class="bar-legend">
+        <span><span class="legend-dot" style="background:linear-gradient(90deg,#00c9a7,#3b82f6)"></span>Ortho-K group</span>
+        <span><span class="legend-dot" style="background:linear-gradient(90deg,#ef4444,#f59e0b)"></span>Control group (spectacles)</span>
+      </div>
+
+      <div class="highlight" style="margin-top:20px">
+        ℹ️ The gap <strong>narrows</strong> over years 6–8 — not because Ortho-K becomes less effective, but because myopia naturally slows in older adolescents in both groups.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(59,130,246,0.1)">🏆</div>
+        <h2>Bottom Line</h2>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" style="font-size:1.6rem">~60%</div>
+          <div class="stat-label">Reduction in progression rate (early years)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="font-size:1.6rem">8 yrs</div>
+          <div class="stat-label">Sustained significant control period</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="font-size:1.6rem">p&lt;.001</div>
+          <div class="stat-label">Statistical significance vs. controls</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FACTORS ── -->
+  <section class="section" id="factors">
+    <div class="section-title">Risk Factors & Predictors</div>
+    <p class="section-sub">What baseline characteristics influence Ortho-K outcomes?</p>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(239,68,68,0.1)">🎯</div>
+        <h2>Significant Predictor: Astigmatism</h2>
+      </div>
+      <p>In the GEE statistical model, <strong style="color:var(--danger)">initial astigmatism power ≥ −1.5 D</strong> was the only factor significantly associated with greater refractive error change over both 8 and 12 years of follow-up.</p>
+      <div class="highlight" style="border-color:var(--danger);background:rgba(239,68,68,0.06)">
+        <strong>Why?</strong> Standard spherical 4-zone Ortho-K lenses may cause <em>incomplete myopic defocus</em> of the peripheral retina in high-astigmatism eyes, reducing the myopia-slowing effect. Toric Ortho-K designs were not available during the study period.
+      </div>
+      <br>
+      <p>The J0 power vector (horizontal astigmatism axis) with greater negative values was also independently associated with increased refractive change (p &lt; 0.001 in both models).</p>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(16,185,129,0.1)">✅</div>
+        <h2>Non-Significant Factors</h2>
+      </div>
+      <p style="margin-bottom:16px">These baseline factors were <strong style="color:var(--success)">NOT significantly</strong> associated with refractive error progression:</p>
+
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">
+        <span class="pill pill-green">Starting age (≤10 vs &gt;10 yrs)</span>
+        <span class="pill pill-green">Initial myopic power (&lt;5D vs ≥5D)</span>
+        <span class="pill pill-green">Lens replacement frequency</span>
+      </div>
+
+      <p style="font-size:13px;color:var(--muted)">About 70% of subjects started Ortho-K after age 10. About 82% had stable lens replacement (average &lt;2 years). Neither significantly affected outcomes.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(245,158,11,0.1)">📌</div>
+        <h2>Study Limitations to Note</h2>
+      </div>
+      <div class="steps">
+        <div class="step-item"><div class="step-num" style="border-color:var(--accent3);color:var(--accent3)">!</div><div class="step-content"><h4>Refraction over lens (not axial length)</h4><p>Myopia progression was measured via back optic zone radius changes, not direct axial length measurement</p></div></div>
+        <div class="step-item"><div class="step-num" style="border-color:var(--accent3);color:var(--accent3)">!</div><div class="step-content"><h4>Retrospective design</h4><p>Neither examiner nor patient was masked to treatment group — potential for bias</p></div></div>
+        <div class="step-item"><div class="step-num" style="border-color:var(--accent3);color:var(--accent3)">!</div><div class="step-content"><h4>Low retention after 8 years</h4><p>Only ~14% of subjects remained after year 8; results beyond this point should be interpreted cautiously</p></div></div>
+        <div class="step-item"><div class="step-num" style="border-color:var(--accent3);color:var(--accent3)">!</div><div class="step-content"><h4>Standard lens only</h4><p>Spherical 4-zone design only; results limited to children with low-to-moderate myopia and low astigmatism</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SAFETY ── -->
+  <section class="section" id="safety">
+    <div class="section-title">Safety Profile</div>
+    <p class="section-sub">Long-term adverse events over the 12-year study period</p>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(16,185,129,0.1)">🛡️</div>
+        <h2>Overall Safety: Clinically Acceptable</h2>
+      </div>
+      <p>The study followed 66 children with overnight contact lens wear for up to 13 years. The safety record was reassuring, with only minor, reversible events reported.</p>
+
+      <div class="stats-grid" style="margin-top:20px">
+        <div class="stat-card" style="border-color:rgba(245,158,11,0.3)">
+          <div class="stat-value" style="font-size:1.8rem;background:linear-gradient(135deg,#f59e0b,#ef4444);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">8</div>
+          <div class="stat-label">Mild superficial punctate keratopathy cases</div>
+        </div>
+        <div class="stat-card" style="border-color:rgba(245,158,11,0.3)">
+          <div class="stat-value" style="font-size:1.8rem;background:linear-gradient(135deg,#f59e0b,#ef4444);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">2</div>
+          <div class="stat-label">Mild corneal erosion cases</div>
+        </div>
+        <div class="stat-card" style="border-color:rgba(16,185,129,0.3)">
+          <div class="stat-value" style="font-size:1.8rem">0</div>
+          <div class="stat-label">Severe complications (e.g. corneal ulcer)</div>
+        </div>
+      </div>
+
+      <div class="highlight" style="margin-top:20px;border-color:var(--success);background:rgba(16,185,129,0.06)">
+        ✅ All minor events <strong>fully resolved</strong> after 1–2 weeks of lens discontinuation (and lens re-design in one patient). No permanent damage was observed.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(59,130,246,0.1)">💊</div>
+        <h2>Comparison with Atropine</h2>
+      </div>
+      <p>Topical atropine is another leading myopia control option. While effective, it carries notable side effects at higher doses:</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
+        <span class="pill pill-red">Photophobia</span>
+        <span class="pill pill-red">Allergic reactions</span>
+        <span class="pill pill-red">Rebound effect at high doses</span>
+        <span class="pill pill-green">Ortho-K: no systemic side effects</span>
+        <span class="pill pill-green">Ortho-K: reversible</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(245,158,11,0.1)">🔧</div>
+        <h2>Lens Care Protocol</h2>
+      </div>
+      <div class="steps">
+        <div class="step-item"><div class="step-num">1</div><div class="step-content"><h4>Clean with Boston Advanced Cleaner</h4><p>Mechanical cleaning with conditioning solution each morning</p></div></div>
+        <div class="step-item"><div class="step-num">2</div><div class="step-content"><h4>Rinse with sterile saline</h4><p>Preserved sterile saline solution after cleaning</p></div></div>
+        <div class="step-item"><div class="step-num">3</div><div class="step-content"><h4>Replace every 1–2 years</h4><p>Stable replacement frequency (avg &lt;2 yrs) was the norm for 82% of patients</p></div></div>
+        <div class="step-item"><div class="step-num">4</div><div class="step-content"><h4>Remove before 11 AM for exams</h4><p>All follow-up exams were completed within 2 hours of lens removal to minimize acuity regression</p></div></div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ── ASK AI ── -->
+  <section class="section" id="ask">
+    <div class="section-title">Ask the Study</div>
+    <p class="section-sub">Ask any question about orthokeratology or this research — powered by AI</p>
+
+    <div class="card" id="chatCard">
+      <div id="chatHistory" style="min-height:80px;max-height:440px;overflow-y:auto;margin-bottom:20px;display:flex;flex-direction:column;gap:14px;padding-right:4px;"></div>
+
+      <div id="suggestions" style="margin-bottom:16px">
+        <p style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px">Suggested questions</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <button class="sugg-btn" onclick="useSuggestion(this)">Who is an ideal Ortho-K candidate?</button>
+          <button class="sugg-btn" onclick="useSuggestion(this)">What does the GEE model test?</button>
+          <button class="sugg-btn" onclick="useSuggestion(this)">How does Ortho-K compare to atropine?</button>
+          <button class="sugg-btn" onclick="useSuggestion(this)">What is peripheral myopic defocus?</button>
+          <button class="sugg-btn" onclick="useSuggestion(this)">Why does the gap narrow after year 6?</button>
+          <button class="sugg-btn" onclick="useSuggestion(this)">What are the main limitations of this study?</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:flex-end;">
+        <textarea id="chatInput"
+          placeholder="Ask anything about this study or Ortho-K…"
+          rows="2"
+          style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 16px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;resize:none;line-height:1.5;outline:none;transition:border-color 0.2s;"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendQuestion();}"
+          onfocus="this.style.borderColor='var(--accent)'"
+          onblur="this.style.borderColor='var(--border)'"
+        ></textarea>
+        <button class="btn" id="sendBtn" onclick="sendQuestion()" style="height:46px;padding:0 22px;flex-shrink:0;display:flex;align-items:center;gap:6px;">
+          Send <span style="font-size:16px">↑</span>
+        </button>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin-top:8px;">Enter to send · Shift+Enter for new line</p>
+    </div>
+  </section>
+
+  <!-- ── QUIZ ── -->
+  <section class="section" id="quiz">
+    <div class="section-title">Knowledge Check</div>
+    <p class="section-sub">Test your understanding of the study</p>
+
+    <div class="card" id="quizCard">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+        <span id="qCounter" style="font-size:13px;color:var(--muted)">Question 1 of 7</span>
+        <span class="score-badge" id="scoreBadge">Score: 0</span>
+      </div>
+
+      <div id="quizContent"></div>
+
+      <div class="quiz-nav">
+        <button class="btn-ghost" onclick="prevQ()" id="prevBtn" disabled>← Back</button>
+        <button class="btn" onclick="nextQ()" id="nextBtn" disabled>Next →</button>
+      </div>
+    </div>
+
+    <!-- Summary (hidden until quiz done) -->
+    <div id="quizSummary" style="display:none">
+      <div class="card" style="text-align:center">
+        <div class="summary-ring">
+          <svg viewBox="0 0 140 140" width="140" height="140">
+            <circle class="ring-bg" cx="70" cy="70" r="57"/>
+            <circle class="ring-fill" id="ringFill" cx="70" cy="70" r="57" stroke-dasharray="358" stroke-dashoffset="358"/>
+          </svg>
+          <div class="ring-text">
+            <div class="ring-score" id="finalScore">0/7</div>
+            <div class="ring-label">Score</div>
+          </div>
+        </div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:1.4rem;margin-bottom:12px">Quiz Complete!</h2>
+        <p id="scoreFeedback" style="color:var(--muted);margin-bottom:24px"></p>
+        <button class="btn" onclick="restartQuiz()">Retake Quiz</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+// ── NAV ──
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const btns = document.querySelectorAll('.nav-btn');
+  const names = ['overview','mechanism','results','factors','safety','quiz','ask'];
+  btns[names.indexOf(id)].classList.add('active');
+  if (id === 'results') setTimeout(animateBars, 200);
+}
+
+// ── BARS ──
+function animateBars() {
+  document.querySelectorAll('.bar-fill[data-width]').forEach(b => {
+    b.style.width = b.dataset.width + '%';
+  });
+}
+
+// ── QUIZ DATA ──
+const questions = [
+  {
+    q: "What was the primary outcome measure for myopia progression in this study?",
+    opts: ["Axial length measurement","Refraction over lens (ROL) method","Intraocular pressure","Visual acuity chart score"],
+    ans: 1,
+    exp: "The study used the Refraction over Lens (ROL) method — tracking changes in the back optic zone radius needed to maintain a plano refraction over the lens."
+  },
+  {
+    q: "At the earliest follow-up interval (years 0–2), what was the approximate myopia progression rate in the Ortho-K group?",
+    opts: ["0.52 D/year","0.17 D/year","0.32 D/year","0.08 D/year"],
+    ans: 1,
+    exp: "The Ortho-K group progressed at 0.17 D/year in the first two years, compared to 0.52 D/year in the control group — a ~67% reduction."
+  },
+  {
+    q: "Which baseline factor was significantly associated with greater refractive error change in the GEE model?",
+    opts: ["Starting age over 10 years","Initial myopia greater than −5 D","Initial astigmatism ≥ −1.5 D","Lens replacement frequency"],
+    ans: 2,
+    exp: "Initial astigmatism power ≥ −1.5 D was the only significant predictor. The standard spherical lens may not fully correct peripheral defocus in high-astigmatism eyes."
+  },
+  {
+    q: "How does Ortho-K create its myopia-slowing effect?",
+    opts: ["It thickens the central corneal epithelium","It creates peripheral hyperopic defocus","It redistributes epithelial cells to create myopic peripheral defocus","It directly inhibits axial elongation via medication"],
+    ans: 2,
+    exp: "By flattening the central cornea, Ortho-K redirects peripheral focus to create relative myopic defocus on the mid-peripheral retina, reducing the stimulus for eye elongation."
+  },
+  {
+    q: "What percentage of subjects remained in the study after 8 years?",
+    opts: ["About 50%","About 30%","About 14%","About 5%"],
+    ans: 2,
+    exp: "There was decreased follow-up after the first 4 years; around only 14% of subjects remained in the study after 8 years. This is a noted limitation of the study."
+  },
+  {
+    q: "Why did the gap between Ortho-K and control groups narrow during years 6–8?",
+    opts: ["Ortho-K effectiveness wears off over time","Myopia naturally progresses faster in older adolescents","Myopia naturally slows in older adolescents in both groups","Patients started wearing spectacles alongside Ortho-K"],
+    ans: 2,
+    exp: "The reduced apparent efficacy reflects natural age-related slowing of myopia progression in both groups. This was supported by previous meta-analysis showing faster myopia progression in younger Chinese children."
+  },
+  {
+    q: "What severe complication was found in the 12-year safety assessment?",
+    opts: ["Multiple corneal ulcers","Severe allergic reactions","Permanent vision loss","None — no severe complications were recorded"],
+    ans: 3,
+    exp: "No severe complications such as corneal ulcers were found. Only mild superficial punctate keratopathy (8 subjects) and mild corneal erosion (2 subjects) occurred, all fully reversible."
+  }
+];
+
+let current = 0, score = 0, answered = false;
+
+function renderQ() {
+  const q = questions[current];
+  answered = false;
+  document.getElementById('qCounter').textContent = `Question ${current+1} of ${questions.length}`;
+  document.getElementById('nextBtn').disabled = true;
+  document.getElementById('prevBtn').disabled = current === 0;
+
+  const html = `
+    <div class="quiz-question">${q.q}</div>
+    <div class="quiz-options">
+      ${q.opts.map((o,i) => `<button class="quiz-option" onclick="checkAns(${i})">${o}</button>`).join('')}
+    </div>
+    <div class="quiz-feedback" id="qFeedback"></div>
+  `;
+  document.getElementById('quizContent').innerHTML = html;
+}
+
+function checkAns(idx) {
+  if (answered) return;
+  answered = true;
+  const q = questions[current];
+  const btns = document.querySelectorAll('.quiz-option');
+  btns.forEach(b => b.disabled = true);
+  btns[q.ans].classList.add('correct');
+  if (idx !== q.ans) btns[idx].classList.add('wrong');
+  else score++;
+  document.getElementById('scoreBadge').textContent = `Score: ${score}`;
+  const fb = document.getElementById('qFeedback');
+  fb.textContent = (idx === q.ans ? '✅ Correct! ' : '❌ Incorrect. ') + q.exp;
+  fb.className = 'quiz-feedback show ' + (idx === q.ans ? 'ok' : 'bad');
+  document.getElementById('nextBtn').disabled = false;
+  document.getElementById('nextBtn').textContent = current < questions.length-1 ? 'Next →' : 'See Results';
+}
+
+function nextQ() {
+  if (current < questions.length-1) { current++; renderQ(); }
+  else showResults();
+}
+
+function prevQ() {
+  if (current > 0) { current--; renderQ(); }
+}
+
+function showResults() {
+  document.getElementById('quizCard').style.display = 'none';
+  document.getElementById('quizSummary').style.display = 'block';
+  document.getElementById('finalScore').textContent = `${score}/${questions.length}`;
+  const pct = score/questions.length;
+  const msgs = [
+    "Keep reviewing — re-read the sections and try again!",
+    "Good start! A few areas to revisit.",
+    "Solid understanding of the study.",
+    "Excellent! You've mastered this research."
+  ];
+  document.getElementById('scoreFeedback').textContent = pct < 0.4 ? msgs[0] : pct < 0.6 ? msgs[1] : pct < 0.85 ? msgs[2] : msgs[3];
+  setTimeout(() => {
+    const circ = 2 * Math.PI * 57;
+    const offset = circ - (pct * circ);
+    document.getElementById('ringFill').style.strokeDashoffset = offset;
+  }, 200);
+}
+
+function restartQuiz() {
+  current = 0; score = 0;
+  document.getElementById('quizCard').style.display = 'block';
+  document.getElementById('quizSummary').style.display = 'none';
+  document.getElementById('scoreBadge').textContent = 'Score: 0';
+  renderQ();
+}
+
+
+// ── ASK AI ──
+const STUDY_CONTEXT = `You are an expert tutor helping someone learn from a clinical research paper about orthokeratology (Ortho-K) and myopia control in children. Answer questions clearly and helpfully, referencing the study data when relevant. Be concise but thorough.
+
+KEY STUDY FACTS:
+- Title: "Effect of Orthokeratology on myopia progression: twelve-year results of a retrospective cohort study" (Lee, Wang, Chiu — BMC Ophthalmology 2017)
+- 66 Ortho-K children + 36 controls (spectacles), 203 eyes, follow-up 1–13 years (mean 6.32 yrs)
+- Ages 7–16 (mean 11.7 yrs), myopia −0.5 to −8.0 D (mean −3.70 D), astigmatism 0 to −3.0 D (mean −0.55 D)
+- Lens: Dreimlens® reverse geometry lens, Dk 127, worn 6–8 hrs nightly
+- Myopia progression (OK group): 0.17 D/yr (yrs 0–2), 0.23 (yrs 2–4), 0.28 (yrs 4–6), 0.32 (yrs 6–8)
+- Myopia progression (Control): 0.52 D/yr (yrs 0–2), 0.50 (yrs 2–4), 0.47 (yrs 4–6), 0.37 (yrs 6–8)
+- Significantly lower progression in OK group (p<0.001) over entire follow-up
+- Only significant predictor: initial astigmatism ≥ −1.5 D (associated with greater refractive change)
+- J0 power vector (more negative) also independently significant
+- Non-significant: wearing age, initial myopia degree, lens replacement frequency
+- ~14% of subjects remained after 8 years (high dropout)
+- Safety: 8 mild superficial punctate keratopathy, 2 mild corneal erosions — all resolved; no corneal ulcers
+- Mechanism: reverse geometry lens flattens central cornea → creates peripheral myopic defocus → reduces stimulus for axial elongation
+- Limitation: measured refraction-over-lens, not axial length; retrospective, not masked; standard spherical lens only (no toric)
+- The gap between groups narrows after year 6 due to natural age-related slowing of myopia, not reduced OK efficacy`;
+
+let chatHistory = [];
+let isThinking = false;
+
+function useSuggestion(btn) {
+  document.getElementById('chatInput').value = btn.textContent;
+  document.getElementById('chatInput').focus();
+}
+
+function addBubble(role, text) {
+  const history = document.getElementById('chatHistory');
+  const div = document.createElement('div');
+  if (role === 'user') {
+    div.className = 'bubble-user';
+    div.textContent = text;
+  } else {
+    div.className = 'bubble-ai';
+    div.innerHTML = '<div class="ai-label">AI Tutor</div><div class="ai-text">' + text.replace(/\n/g, '<br>') + '</div>';
+  }
+  history.appendChild(div);
+  history.scrollTop = history.scrollHeight;
+  return div;
+}
+
+function addTyping() {
+  const history = document.getElementById('chatHistory');
+  const div = document.createElement('div');
+  div.className = 'bubble-typing';
+  div.id = 'typingIndicator';
+  div.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+  history.appendChild(div);
+  history.scrollTop = history.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typingIndicator');
+  if (el) el.remove();
+}
+
+async function sendQuestion() {
+  if (isThinking) return;
+  const input = document.getElementById('chatInput');
+  const q = input.value.trim();
+  if (!q) return;
+
+  // Hide suggestions after first message
+  document.getElementById('suggestions').style.display = 'none';
+
+  input.value = '';
+  isThinking = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  addBubble('user', q);
+  chatHistory.push({ role: 'user', content: q });
+  addTyping();
+
+  try {
+    const messages = [
+      { role: 'user', content: STUDY_CONTEXT + '\n\nConversation so far — answer the latest user question.' },
+      { role: 'assistant', content: 'Understood. I will answer questions about this Ortho-K study accurately and helpfully.' },
+      ...chatHistory
+    ];
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages
+      })
+    });
+
+    const data = await res.json();
+    removeTyping();
+
+    const reply = data.content?.[0]?.text || 'Sorry, I could not generate a response. Please try again.';
+    chatHistory.push({ role: 'assistant', content: reply });
+    addBubble('ai', reply);
+  } catch (err) {
+    removeTyping();
+    addBubble('ai', 'There was an error connecting to the AI. Please check your connection and try again.');
+  }
+
+  isThinking = false;
+  document.getElementById('sendBtn').disabled = false;
+  input.focus();
+}
+
+// Init
+renderQ();
+</script>
+</body>
+</html>
